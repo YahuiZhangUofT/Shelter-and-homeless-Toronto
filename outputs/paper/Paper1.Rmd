@@ -1,0 +1,131 @@
+---
+title: "The increasing scope of homelessness and social injustice in the city of Toronto"
+author: "Yahui Zhang"
+date: "6 February 2022"
+output:
+  bookdown::pdf_document2:
+thanks: "Code and data are available at: https://github.com/YahuiZhangUofT/Shelter-and-homeless-Toronto"
+abstract: This analysis used the dataset "Toronto Shelter System Flow" from the City of Toronto Open Data Portal to analyze the city's sheltered population and the social issues it presents. The data reveal that the sheltered population has increased steadily since April, with indigenous people being one of the most vulnerable groups. Meanwhile, the refugee population has a much higher percentage of minors than the non-refugee group. This report aims to help audiences grasp the social injustice among the most vulnerable. 
+toc: FALSE
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(opendatatoronto)
+library(dplyr)
+library(readr)
+library(knitr)
+library(ggplot2)
+library(stringr)
+library(here)
+library(tinytex)
+library(bookdown)
+library(kableExtra)
+
+```
+# Introduction
+
+Toronto is one of the most diverse cities in the world. Today, people of non-European ancestry make up approximately 52.9% of the city's total population [@Canada]. Many immigrants and ethical minorities are able to find their way to success in Toronto as this dynamic city provides enormous opportunities to all the people. However, no matter how charming and diverse the city may seem, there will always be vulnerable groups marginalized by mainstream society and receive unjust treatment.
+
+In this report, I will provide an in-depth analysis of the city's unhoused population and reveal the social issues that are hiding under the surface. Through a detailed analysis, I was able to find that there is an increasing trend in the city's total active homeless population. Such a problem could be temporary as we are going through a global pandemic that is devastating to the world's economy. However, this issue could become permanent if not appropriately handled. Moreover, this study will also reveal how mainstream society marginalizes indigenous groups in the City of Toronto, evidenced by research, statistics, and data collected from the Open Data Toronto Portal [@opendatatoronto].
+
+# Data
+
+To better understand the issues related to Toronto's homeless population, I have extracted the data set 'Toronto Shelter System Flow' [@Flow] from the City of Toronto's open data portal [@opendatatoronto]. The data set is of good quality compared to the majority of the data sets available on the open data portal. There were barely any bad or missing data contained in this data set. According to the description on the data set's page, these data were collected through the Shelter Management Information System (SMIS) and uploaded to the open data portal on a monthly basis [@Flow]. Once an end-user accesses a service that has employed this system, their data will be entered into this system. However, this creates a limitation for our data set as "shelter sites that do not use SMIS and that are funded by other levels of government are not included in the data set.[@Flow]" Furthermore, this data set also does not include homeless people who have trouble or choose not to access a shelter site where the Shelter Management Information System is implemented [@Flow]. This might help create a bias that will affect the accuracy of our analysis.
+
+The analysis of this data set will be conducted with the help of the R language [@CiteR]. Several packages were also used to make the entire process smoother. Specifically, the opendatatoronto package was loaded to help locate and access the data set we need for this interpretation [@opendatatoronto]. The package knitr [@knitr], tinytex [@tinytex], kableExtra [@kableExtra], and bookdown [@bookdown] were used to help produce the report in the desired format and better the reproducibility. Moreover, I have also used the tidyverse package to help create the table and graphs and manipulate data [@tidyverse]. Last but not least, the here package was also in place to help navigate the file [@here].  
+
+To begin with, I used R to help load the data set I needed from the City of Toronto's open data portal [@CiteR]. By inputting the exact package number obtained from the data set's website, I quickly extracted the data from the database and saved it as raw data for the future data cleaning process. Once the data set was saved and loaded again back into the studio, I began the process of cleaning. First, I removed data that I would not need for this analysis. I removed the id column, all the data collected in 2020, and several variables from the data set as they are redundant for this project. Then, I computed two new variables, "percentage under 16" and "percentage moved to housing," by dividing the variable "ageunder16" by "actively_homeless"and "move_to_housing" by "actively_homeless." These two new variables will be used for interpreting how minority groups are even more disadvantaged among the unhoused population. The function I applied here is 'mutate' from the package dplyr [@dplyr]. Next, I used the 'mutate_if' function from the same package to reduce decimal points to a comfortable range that is easy for analyzing. At this point, the data was cleaned and saved for analysis.
+
+```{r, include=FALSE}
+#load clean data
+clean_data <- read.csv(here("inputs/data/clean_data.csv"))
+
+#change letters to numbers for easy formatting
+clean_data[clean_data == 'Jan-21']<- '01'
+clean_data[clean_data == 'Feb-21']<- '02'
+clean_data[clean_data == 'Mar-21']<- '03'
+clean_data[clean_data == 'Apr-21']<- '04'
+clean_data[clean_data == 'May-21']<- '05'
+clean_data[clean_data == 'Jun-21']<- '06'
+clean_data[clean_data == 'Jul-21']<- '07'
+clean_data[clean_data == 'Aug-21']<- '08'
+clean_data[clean_data == 'Sep-21']<- '09'
+clean_data[clean_data == 'Oct-21']<- '10'
+clean_data[clean_data == 'Nov-21']<- '11'
+clean_data[clean_data == 'Dec-21']<- '12'
+
+#change column name from month_year to month
+colnames(clean_data)[1] <- "month"
+
+
+```
+Furthermore, there is one more step before using the data set to construct graphs and tables. When I was trying to construct the first histogram, I realized that months displayed on the X-Coordinate do not follow a proper sequence. Instead of ordering the months from January to December, the plotting function ranks the months in alphabetical order. Thus, I changed the names of the months from letters to numbers for easier formatting. And since there are no more years contained in the column, I changed this column's name from "month_year" to "month." For the construction of the graphs, I used the ggplot function provided by the ggplot2 package [@ggplot2]. For the purpose of this analysis, I have plotted a bar graph, a smooth line graph, and a line graph. In addition, I also made a table demonstrating the mean percentage of each group's population under 16 years old and the rate of moving to permanent housing. To construct this table, I used the "knitr::kable" function offered by the knitr package [@knitr]. 
+\newpage
+
+## Figure one
+```{r actbymon, fig.cap="Number of active homeless people by month",fig.height=4, echo=FALSE}
+
+ggplot(clean_data, aes(x = month, y = actively_homeless,))+
+geom_text(aes(label=actively_homeless), vjust=0)+
+geom_bar(stat = "identity", position = position_dodge())+
+  labs(x = "Month",
+       y = "Number of active homeless people",
+       title = "Number of active homeless people by month in Toronto",
+       subtitle = "Year 2021")+
+       theme(axis.text.x = element_text(angle=0, vjust=1))
+```
+
+To study the trend of the sheltered population in the City of Toronto, I have plotted a bar graph that reveals the number of each month's active sheltered population [@ggplot2]. This graph shows a clear trend that the unhoused population who used the shelter service in the past three months has increased since April 2021. Studies have shown that the ongoing COVID19 pandemic could be one of the primary reasons that caused this issue. For instance, researchers from the Bissell Centre have stated that "Nations across the world have witnessed a rise in unemployment due to COVID-19, and it is expected that homelessness will increase" [@brief]. This statement evidences that the ongoing pandemic and the high employment rate are two crucial factors that help raise the homeless population. The trend on the chart caters to the views of these researchers.
+
+## Figure two
+```{r dist, fig.cap="Distrubution of sheltered homeless population", echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplot(clean_data, aes(x = month, y = population_group_percentage, color = population_group)) +
+geom_smooth(aes(group = population_group), se = FALSE) +
+  labs(color = "Population Group",
+       x = "Month",
+       y = "Percentage in total population",
+       title = "Percentage of each group in total sheltered homeless population",
+       subtitle = "The proportion of different group among total active sheltered homeless people")+
+       theme(axis.text.x = element_text(angle=0, vjust=1))
+
+```
+
+The smooth line graph here demonstrated the percentage of each population group represented in each month's total active homeless population. By observing this graph, we can conclude that the percentage of single adults in the total active homeless population has been decreasing since the beginning of the year 2021. The percentage of refugees and families has been increasing since January. To note, there seems to be a rapid increase in the percentage of refugees in the total active homeless population since August. Meanwhile, although the percentage of the indigenous group in the total active homeless population seems low on the graph in comparison to the other groups, we should note that the percentage of indigenous people in the City of Toronto's total population is even lower. According to Statistics Canada, only 1.3% of the population in the City of Toronto are identified as indigenous people [@Canada]. Compare to the percentage that indigenous people represented in the total active homeless population, there is a clear sign of social injustice that indigenous people are being marginalized from the society. 
+
+## Figure three
+```{r perc, fig.cap="Percentage of each group moved to permanent housing", echo=FALSE, warning=FALSE, message=FALSE}
+
+ggplot(clean_data, aes(x = month, y = percentage_moved_to_housing, color = population_group)) +
+geom_line(aes(group = population_group)) +
+  labs(color = "Population Group",
+       x = "Month",
+       y = "Percentage in total population",
+       title = "Percentage of each group end up moving to housing",
+       subtitle = "Year 2021")+
+       theme(axis.text.x = element_text(angle=0, vjust=1))
+
+```
+
+The line graph in figure three reveals the percentage of each group that has moved to a permanent home and stopped using the shelter service. From the line graph, we can tell that families and refugees have the highest percentage of the population that ends up moving into permanent housing. By looking at the bottom of the graph, we can also see that single adults and indigenous people have the lowest rate of moving into a permanent home. This reflects a social issue that indigenous people have the lowest chance of ending poverty and moving to a permanent home. 
+
+## Table
+```{r tab, fig.cap="Mean percentage of each group's population under 16 years old and rate of moving to permanent housing", echo=FALSE}
+
+table_data <- group_by(clean_data, population_group)
+summarise(table_data, percentage_of_under_16 = mean(percentage_of_under_16), percentage_moved_to_housing = mean(percentage_moved_to_housing) ) %>% mutate_if(is.numeric, round, digits = 1) -> table_data2
+knitr::kable(table_data2, 
+             caption = "Percentages in Mean",
+             col.names = c("Group", "Percentage with minor", "percentage moved to housing"),
+             align = c("c", "c", "c")) %>% kable_styling(latex_options = "HOLD_position")
+
+```
+
+In this section, the table offers a clear view of the mean percentage of each group's population under 16 years old and the rate of moving into permanent housing. Groups like refugees and families clearly have the highest rate of moving into permanent housing, which matches their high percentage of population under 16 years old. This is understandable as there are often more programs that help minors move to a permanent home. However, it is essential to note that the indigenous group has the lowest rate of moving into a permanent home. This data echoes the argument I have elaborated above. Thus, we can further conclude that Indigenous people are being marginalized from mainstream society. 
+
+# References
+
